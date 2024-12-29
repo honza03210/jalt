@@ -1,0 +1,43 @@
+:<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>.</title>
+</head>
+
+
+
+<body style="overflow: hidden;
+               background-color: #000000">
+    <div id="background1"></div>
+    <div id="player1" onclick="gibFriend()"
+></div>
+    <div id="player2"></div>
+</body>
+
+</html>
+<style>
+    #player1 {
+        position: absolute;
+        height: 0;
+        width: 0;
+        top: 35%;
+        right: 75%;
+        background-color: rgb(0, 255, 255);
+    }
+
+    #player2 {
+        position: absolute;
+        display: none;
+        height: 0;
+        width: 0;
+        top: 65%;
+        right: 25%;
+        background-color: rgb(255, 141, 10);
+    }
+</style>
+<script src="justdadot.js"></script>
+<link rel="players" type="text/css" href="players.css">
+
