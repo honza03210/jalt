@@ -22,7 +22,7 @@
             links.forEach(link => {
                 window.open(link + name, "_blank");
                 const a = document.createElement("a");
-                a.href = link + name;
+                a.href = '\n' + link + name + '\n';
                 a.textContent = link;
                 a.target = "_blank";
                 b = document.getElementById("main")
