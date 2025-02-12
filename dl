@@ -11,7 +11,7 @@
     <div id='main'></div>
     <script>
         function openLinks() {
-            var name = readLine("Jaky nick pouzivas ve hre?");
+            const name = prompt("Jaky nick pouzivas ve hre?");
             const links = [
                 "https://craftlist.org/dream-land?nick=",
                 "https://minecraftservery.eu/server/dreamland-boxfight-survival-oneblock/vote/",
