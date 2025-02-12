@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamLand Vote Links</title>
+</head>
+<body>
+
+    <button onclick="openLinks()">Open Links</button>
+    <div id='main'></div>
+    <script>
+        function openLinks() {
+            var name = readLine("Jaky nick pouzivas ve hre?");
+            const links = [
+                "https://craftlist.org/dream-land?nick=",
+                "https://minecraftservery.eu/server/dreamland-boxfight-survival-oneblock/vote/",
+                "https://czech-craft.eu/server/dream-land/vote/?user=",
+                "https://www.minecraft-list.cz/server/dreamland-l-kvalitni-survival-servery/vote?name="
+            ];
+            
+            links.forEach(link => {
+                window.open(link + name, "_blank");
+                const a = document.createElement("a");
+                a.href = link + name;
+                a.textContent = link;
+                a.target = "_blank";
+                b = document.getElementById("main")
+                b.appendChild(a);
+            });
+        }
+    </script>
+
+</body>
+</html>
