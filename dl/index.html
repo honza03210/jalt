@@ -26,8 +26,8 @@
             links.forEach(link => {
                 window.open(link + name, "_blank");
                 const a = document.createElement("a");
-                a.href = '\n' + link + name + '\n';
-                a.textContent = '\n' + link + name + '\n';
+                a.href = link + name;
+                a.textContent = link;
                 a.target = "_blank";
                 b = document.getElementById("main")
                 b.appendChild(a);
