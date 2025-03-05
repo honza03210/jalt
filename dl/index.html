@@ -25,7 +25,6 @@ if (cookieVal) {
   let name = prompt("Jaky nick pouzivas ve hre?");
     if (name) {
         document.cookie = `${cookieName}=${encodeURIComponent(cookieVal)}; path=/; max-age=${7 * 24 * 60 * 60}`;
-        alert("Cookie saved!");
     }
 }
       
