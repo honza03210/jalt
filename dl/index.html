@@ -18,8 +18,8 @@
         function openLinks() {
               let cookieName = "dreamLandName";
               let cookieVal = document.cookie.split('; ').find(row => row.startsWith(cookieName + '='))?.split('=')[1];
-
-if (cookieVal) {
+// psano na mobilu, absolutni hovadina, treba to prepisu a cely opravim na pc
+if (0) {
       let name = cookieVal;
 } else {
   let name = prompt("Jaky nick pouzivas ve hre?");
