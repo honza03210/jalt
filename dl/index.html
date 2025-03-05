@@ -17,7 +17,7 @@
     <script>
         function openLinks() {
               let cookieName = "dreamLandName";
-              let cookieVal = document.cookie.split('; ').find(row => row.startsWith(name + '='))?.split('=')[1];
+              let cookieVal = document.cookie.split('; ').find(row => row.startsWith(cookieName + '='))?.split('=')[1];
 
 if (cookieVal) {
       let name = cookieVal;
