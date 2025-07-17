@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "./components/ui/card";
+import { Button } from "./components/ui/button";
 import { CheckCircle, XCircle } from "lucide-react";
 
 const TENTS = Array.from({ length: 15 }, (_, i) => ({ id: `Tent ${i + 1}`, capacity: 2, booked: 0 }));
