@@ -1,0 +1,11 @@
+{
+  "headers": [
+    {
+      "source": "/Build/(.*).js.br",
+      "headers": [
+        { "key": "Content-Encoding", "value": "br" },
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    }
+  ]
+}
