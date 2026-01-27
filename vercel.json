@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/Build/(.*).js.gz",
+      "source": "/phantasy/Build/(.*).js.gz",
       "headers": [
         { "key": "Content-Encoding", "value": "gzip" },
         { "key": "Content-Type", "value": "application/javascript" }
