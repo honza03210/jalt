@@ -1,5 +1,15 @@
 {
   "version": 2,
+  "rewrites": [
+    {
+      "source": "/phantasy",
+      "destination": "/phantasy/index.html"
+    },
+    {
+      "source": "/phantasy/",
+      "destination": "/phantasy/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/phantasy/Build/(.*).js.gz",
