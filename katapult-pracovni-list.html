@@ -1,0 +1,746 @@
+<title>Katapult ve Scratchi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: jedna čtecí kolona navržená od ~400 px (okno vedle Scratche); pod hlavičkou lepkavá lišta úrovní
+   (na úzku jeden posuvný řádek), karty úkolů a na konci úrovně karta s pokrokem. */
+:root {
+  --bg: #eceef1;
+  --paper: #ffffff;
+  --ink: #1f2329;
+  --muted: #535b66;
+  --line: #cfd5dc;
+  --stone: #3b4450;
+  --stone-soft: #dde2e8;
+  --brick: #9a3324;
+  --brick-tint: #f6e6e2;
+  --on-brick: #ffffff;
+  --wood: #7a5230;
+  --b-ev: #ffbf00; --b-ctl: #ffab19; --b-mot: #3373cc; --b-look: #7a45e5;
+  --b-snd: #a63fa6; --b-op: #59c059; --b-var: #ff8c1a; --b-sense: #5cb1d6;
+  --b-ink-dark: #2a1f00; --b-ink-light: #ffffff;
+  --display: "Bree Serif", "Rockwell", Georgia, serif;
+  --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15181c; --paper: #1e2227; --ink: #e8eaed; --muted: #a3abb5; --line: #353c45;
+    --stone: #c9d0d8; --stone-soft: #2b3138; --brick: #e8836b; --brick-tint: #3a2622; --on-brick: #1a0f0c; --wood: #c39469;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15181c; --paper: #1e2227; --ink: #e8eaed; --muted: #a3abb5; --line: #353c45;
+  --stone: #c9d0d8; --stone-soft: #2b3138; --brick: #e8836b; --brick-tint: #3a2622; --on-brick: #1a0f0c; --wood: #c39469;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 80px; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+}
+::selection { background: var(--brick); color: var(--on-brick); }
+a { color: var(--brick); text-underline-offset: 3px; }
+.sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+/* Hlavička */
+header { display: flex; flex-direction: column; gap: 6px; }
+header h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2rem, 7vw, 2.8rem); line-height: 1.05; margin: 0; color: var(--stone); text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 60ch; }
+
+/* Start */
+.start { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.start h2 { font-family: var(--display); font-weight: 400; font-size: 1.3rem; margin: 0; color: var(--stone); }
+.start ol { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 8px; }
+.start-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--on-brick); background: var(--brick); padding: 9px 16px; border-radius: 10px; text-decoration: none; margin-top: 4px; }
+.start-link svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+.start-link:hover { text-decoration: underline; }
+.start details { border-top: 1px solid var(--line); }
+.cast { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; }
+.cast dt { font-weight: 800; color: var(--stone); }
+.cast dd { margin: 0; }
+.reset-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; border-top: 1px solid var(--line); padding-top: 12px; font-size: .95rem; color: var(--muted); }
+.btn { font: 700 .95rem/1.2 var(--body); border-radius: 10px; padding: 9px 14px; cursor: pointer; border: 2px solid var(--stone); background: var(--paper); color: var(--stone); min-height: 44px; }
+.btn:hover { background: var(--stone-soft); }
+.btn.danger { border-color: var(--brick); background: var(--brick); color: var(--on-brick); }
+.btn.danger:hover { filter: brightness(1.08); }
+
+/* Lišta úrovní */
+.nav-sentinel { height: 0; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+nav button {
+  font: 700 1rem/1.1 var(--body); color: var(--ink); background: var(--paper);
+  border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; min-height: 44px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; flex: none; transition: border-color .15s, background .15s;
+}
+nav button:hover { border-color: var(--brick); }
+nav button[aria-pressed="true"] { background: var(--brick); border-color: var(--brick); color: var(--on-brick); box-shadow: 0 2px 6px rgba(0,0,0,.22); }
+nav .count { font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; padding: 1px 7px; border-radius: 999px; background: var(--stone-soft); color: var(--ink); }
+nav button[aria-pressed="true"] .count { background: color-mix(in srgb, var(--on-brick) 22%, transparent); color: var(--on-brick); }
+nav button.all-done .count { background: var(--brick); color: var(--on-brick); }
+nav button[aria-pressed="true"].all-done .count { background: var(--on-brick); color: var(--brick); }
+:focus-visible { outline: 3px solid var(--brick); outline-offset: 2px; }
+
+/* Úroveň */
+section.level { display: flex; flex-direction: column; gap: 16px; }
+.level-head { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+.level-head h2 { font-family: var(--display); font-weight: 400; font-size: 1.75rem; margin: 0; color: var(--stone); line-height: 1.2; text-wrap: balance; }
+.level-head p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.task { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.task-top { display: flex; gap: 12px; align-items: flex-start; }
+.num { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--stone); color: var(--paper); font: 400 1.15rem/36px var(--display); text-align: center; }
+.task h3 { font-family: var(--display); font-weight: 400; font-size: 1.3rem; margin: 3px 0 0; line-height: 1.25; flex: 1; min-width: 0; text-wrap: balance; }
+.done { flex: none; display: flex; align-items: center; gap: 6px; font-size: .88rem; font-weight: 700; color: var(--muted); cursor: pointer; user-select: none; padding: 6px; margin: -6px -6px 0 0; border-radius: 8px; min-height: 44px; }
+.done input { width: 26px; height: 26px; accent-color: var(--brick); cursor: pointer; margin: 0; }
+.task.is-done { border-color: var(--brick); background: var(--brick-tint); }
+.task.is-done h3 { text-decoration: line-through; text-decoration-color: var(--brick); text-decoration-thickness: 2px; }
+.goal { margin: 0; font-weight: 800; }
+.task ol, .task ul { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 8px; }
+.task li, .task p { line-height: 1.85; min-width: 0; }
+.task p { margin: 0; }
+.where { font-size: .95rem; background: var(--bg); border-radius: 10px; padding: 6px 12px; }
+.where .tag { font-weight: 800; color: var(--stone); margin-right: 4px; }
+.sprite { font-weight: 800; color: var(--stone); }
+.note { font-size: .95rem; color: var(--muted); }
+.note b { color: var(--ink); }
+
+details { border-top: 1px dashed var(--line); padding-top: 8px; }
+summary { cursor: pointer; font-weight: 800; color: var(--brick); width: fit-content; min-height: 32px; }
+details > div { padding-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Scratch bloky: v textu se zalamují, v ukázkách skriptů drží tvar */
+.b { display: inline; font: 700 .86rem/1.3 var(--body); padding: 2px 8px; border-radius: 6px; color: var(--b-ink-light); box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.b i { font-style: normal; background: rgba(255,255,255,.92); color: #333; border-radius: 10px; padding: 0 6px; margin: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.ev { background: var(--b-ev); color: var(--b-ink-dark); } .ctl { background: var(--b-ctl); color: var(--b-ink-dark); }
+.mot { background: var(--b-mot); } .look { background: var(--b-look); } .snd { background: var(--b-snd); }
+.op { background: var(--b-op); color: var(--b-ink-dark); } .var { background: var(--b-var); color: var(--b-ink-dark); } .sense { background: var(--b-sense); color: var(--b-ink-dark); }
+.script { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px; background: var(--bg); border-radius: 10px; overflow-x: auto; max-width: 100%; }
+.script .b { display: inline-block; white-space: nowrap; padding: 4px 10px; }
+.script .b .b { display: inline; padding: 2px 8px; }
+.script .in { margin-left: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; border-left: 10px solid var(--b-ctl); padding-left: 6px; padding-block: 2px; }
+.new { outline: 2px dashed var(--ink); outline-offset: 2px; position: relative; }
+.new::after { content: " (nový blok)"; position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.legend { font-size: .85rem; color: var(--muted); margin: -4px 0 0; display: flex; align-items: center; gap: 8px; }
+.legend .swatch { width: 26px; height: 14px; border: 2px dashed var(--ink); border-radius: 4px; flex: none; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 400px; font-variant-numeric: tabular-nums; }
+caption { text-align: left; font-weight: 800; padding-bottom: 6px; }
+th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: center; }
+th { background: var(--stone-soft); font-weight: 800; }
+td.blank { height: 40px; }
+.lines { display: flex; flex-direction: column; gap: 24px; padding-top: 14px; }
+.lines span { border-bottom: 2px dotted var(--line); }
+
+/* Konec úrovně: pokrok */
+.finish { background: var(--paper); border: 2px dashed var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; }
+.finish.complete { border-style: solid; border-color: var(--brick); }
+.finish-body { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.finish-title { font-family: var(--display); font-size: 1.25rem; margin: 0; color: var(--stone); }
+.finish p { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+@media (max-width: 600px) {
+  nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; margin-inline: -4px; padding-inline: 4px; }
+  nav .long { display: none; }
+  .task, .start, .finish { padding: 14px; }
+  .done .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .cast { grid-template-columns: 1fr; gap: 0 0; }
+  .cast dd { margin-bottom: 6px; }
+}
+
+@media print {
+  body { background: #fff; color: #000; padding-block: 0; }
+  nav, .nav-sentinel, .reset-row, .finish, .start-link, .done { display: none !important; }
+  section.level[hidden] { display: flex !important; }
+  section.level { break-before: page; }
+  .task { break-inside: avoid; border-color: #999; }
+  .b, .b i, .script, .where, th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Katapult ve Scratchi</h1>
+    <p>Vylepši simulaci středověkého katapultu, kterému se říká mangonel. Vyber si úroveň a plň úkoly od prvního. Splněný úkol si odškrtni.</p>
+  </header>
+
+  <div class="start">
+    <h2>Než začneš</h2>
+    <ol>
+      <li>Otevři projekt:<br><a class="start-link" href="https://scratch.mit.edu/projects/154749365/editor/" target="_blank" rel="noopener">Otevřít katapult ve Scratchi<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3h8v8M13 3 3 13"/></svg></a></li>
+      <li>Ulož si vlastní kopii. Máš účet a jsi přihlášen/a? Klikni nahoře na <b>Remixovat</b>. Nemáš účet? Vyber <b>Soubor → Ulož do svého počítače</b>. Když se něco pokazí, máš se k čemu vrátit.</li>
+      <li>Je Scratch anglicky? Klikni vlevo nahoře na <b>glóbus</b> a vyber <b>Čeština</b>. Pak budou bloky vypadat stejně jako tady.</li>
+      <li>Začni Úrovní 1. Po každé změně klikni na zelenou vlajku a vyzkoušej, co se stalo.</li>
+    </ol>
+    <details>
+      <summary>Kdo je kdo v projektu</summary>
+      <div>
+        <p>Postavy mají anglická jména. Tady je, co která dělá:</p>
+        <dl class="cast">
+          <dt>Rock</dt><dd>střela (kámen), tady se počítá let</dd>
+          <dt>Arm &amp; bucket</dt><dd>rameno s košem, které se vymrští</dd>
+          <dt>THE crossbar</dt><dd>příčka, o kterou se rameno zastaví; posouvá ji Pitch</dd>
+          <dt>Crossbar, Crossbar2</dt><dd>trámy rámu, jen se posouvají</dd>
+          <dt>Frame, Frame2</dt><dd>dřevěné trojúhelníky rámu</dd>
+          <dt>Mangonel Base</dt><dd>podstavec na kolech</dd>
+          <dt>Distance Flag</dt><dd>vlaječky, které ukazují uletěnou vzdálenost</dd>
+          <dt>Fire Button</dt><dd>tlačítko FIRE</dd>
+        </dl>
+      </div>
+    </details>
+    <div class="reset-row" id="reset-row">
+      <span id="reset-text">Sedí u počítače někdo nový?</span>
+      <button class="btn" id="reset-ask" type="button">Začít znovu</button>
+      <button class="btn danger" id="reset-yes" type="button" hidden>Ano, smazat odškrtnutí</button>
+      <button class="btn" id="reset-no" type="button" hidden>Ne, nechat</button>
+    </div>
+  </div>
+
+  <div class="nav-sentinel" id="nav-sentinel"></div>
+  <nav aria-label="Úrovně obtížnosti">
+    <button data-level="uroven-1" aria-pressed="true"><span class="long">Úroveň </span>1 <span class="count" aria-hidden="true"></span></button>
+    <button data-level="uroven-2" aria-pressed="false"><span class="long">Úroveň </span>2 <span class="count" aria-hidden="true"></span></button>
+    <button data-level="uroven-3" aria-pressed="false"><span class="long">Úroveň </span>3 <span class="count" aria-hidden="true"></span></button>
+    <button data-level="uroven-4" aria-pressed="false"><span class="long">Úroveň </span>4 <span class="count" aria-hidden="true"></span></button>
+    <button data-level="badani" aria-pressed="false">Bádání <span class="count" aria-hidden="true"></span></button>
+  </nav>
+  <p class="sr" id="announce" aria-live="polite"></p>
+
+  <!-- ÚROVEŇ 1 -->
+  <section class="level" id="sekce-uroven-1" data-level="uroven-1" data-name="Úroveň 1" aria-labelledby="h-uroven-1">
+    <div class="level-head">
+      <h2 id="h-uroven-1">Úroveň 1: Malé změny</h2>
+      <p>Měníš čísla, texty a obrázky, které už v projektu jsou. Žádné nové bloky. Na každý úkol asi 5–10 minut.</p>
+    </div>
+
+    <article class="task" data-id="1-1">
+      <div class="task-top"><span class="num">1</span><h3>Katapult mluví česky</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: všechny bubliny s textem budou česky.</p>
+      <p class="where"><span class="tag">Kde:</span> postavy <span class="sprite">Mangonel Base</span>, <span class="sprite">Crossbar2</span>, <span class="sprite">THE crossbar</span>, <span class="sprite">Arm &amp; bucket</span></p>
+      <ol>
+        <li>Klikni na postavu dole v seznamu postav.</li>
+        <li>Najdi bloky <span class="b look">řekni <i>…</i> na <i>8</i> sekund</span> nebo <span class="b look">mysli si <i>…</i> na <i>8</i> sekund</span>.</li>
+        <li>Klikni do bílého políčka s anglickým textem a napiš ho česky. Stačí zkráceně, hlavně ať je to srozumitelné.</li>
+        <li>Pozor na překlepy v originále: „Mongonel“ má být „Mangonel“ a „missle“ je „missile“, tedy střela.</li>
+      </ol>
+      <details><summary>Nápověda: co znamenají slova</summary><div>
+        <p><b>Frame</b> = rám, <b>Cross Bar</b> = příčka (zarážka), <b>Arm</b> = rameno, <b>Basket</b> = koš, <b>Sling</b> = prak, <b>torsion power</b> = síla zkrouceného lana.</p>
+        <p>Když je text delší, zvyš počet sekund, aby se stihl přečíst.</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="1-2">
+      <div class="task-top"><span class="num">2</span><h3>Vlastní střela</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: katapult nebude házet kámen, ale něco tvého (dýni, krávu, míč…).</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span>, záložka <b>Kostýmy</b></p>
+      <ol>
+        <li>Vyber postavu <span class="sprite">Rock</span> a otevři záložku Kostýmy.</li>
+        <li>Překresli kámen v editoru, nebo přidej nový kostým z knihovny.</li>
+        <li>Nový kostým musí být ten vybraný (modře orámovaný).</li>
+        <li>Hlídej velikost: střela se musí vejít do koše katapultu.</li>
+      </ol>
+    </article>
+
+    <article class="task" data-id="1-3">
+      <div class="task-top"><span class="num">3</span><h3>Gravitace na jiné planetě</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: zjistit, jak daleko by katapult dohodil na Měsíci a jak daleko na Jupiteru.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span>, skript začínající <span class="b ev">po obdržení zprávy <i>fire2 launched</i></span>, který má velkou smyčku <span class="b ctl">opakuj stále</span></p>
+      <ol>
+        <li>Najdi ve smyčce blok <span class="b var">změň <i>Y-Speed</i> o <i>-0.15</i></span>. Tohle číslo je gravitace: každou chvíli stáhne střelu trochu dolů.</li>
+        <li>Vystřel s výchozí silou a sklonem (oba 50).</li>
+        <li>Zapiš si, kolik ukazuje Distance.</li>
+        <li>Přepiš <b>-0.15</b> na <b>-0.05</b> (Měsíc) a vystřel znovu se stejnou silou a sklonem.</li>
+        <li>Zkus <b>-0.4</b> (Jupiter). Nakonec vrať <b>-0.15</b>.</li>
+      </ol>
+      <details><summary>Otázka na přemýšlení</summary><div>
+        <p>Proč je to číslo záporné? Co se stane, když napíšeš kladné číslo, třeba <b>0.1</b>? Zkus to.</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="1-4">
+      <div class="task-top"><span class="num">4</span><h3>Silnější katapult</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: posuvník síly půjde nastavit až na 200.</p>
+      <p class="where"><span class="tag">Kde:</span> na scéně, posuvník <b>Power (Speed)</b>. Uvidíš ho až po kliknutí na Start.</p>
+      <ol>
+        <li>Klikni na zelenou vlajku a pak na Start, aby se ukázaly posuvníky.</li>
+        <li>Klikni na posuvník Power (Speed) <b>pravým tlačítkem</b> myši. Na tabletu na něm podrž prst.</li>
+        <li>Vyber „změnit rozsah posuvníku“ a jako maximum napiš <b>200</b>.</li>
+        <li>Vystřel s plnou silou. Kam až střela doletí?</li>
+      </ol>
+      <details><summary>Bonus</summary><div>
+        <p>Posuvník Pitch začíná na 40, ne na 0. Zkus mu nastavit minimum na 1 a vystřel s Pitch = 1. Co se stane? Proč asi autor dal minimum 40?</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="1-5">
+      <div class="task-top"><span class="num">5</span><h3>Rychlejší rameno</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: rameno katapultu se bude vymršťovat rychleji.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Arm &amp; bucket</span>, skript <span class="b ev">po obdržení zprávy <i>fire1</i></span></p>
+      <ol>
+        <li>Najdi blok <span class="b mot">otoč se <span aria-hidden="true">↻</span><span class="sr">doprava</span> o <span class="b op"><span class="b var">Power (Speed)</span> / <i>5</i></span> stupňů</span>.</li>
+        <li>Změň <b>5</b> na <b>2</b>. Rameno se teď otočí o víc stupňů najednou.</li>
+        <li>Doletí střela dál? Proč ano, nebo proč ne? Nápověda: podívej se, jestli rychlost ramene vůbec vstupuje do výpočtu letu v postavě Rock.</li>
+      </ol>
+      <p class="note"><b>Pozor:</b> s velkou silou z úkolu 4 se rameno může přetočit přes příčku a točit se dokola. Pak vrať číslo <b>5</b>, nebo zmenši sílu.</p>
+    </article>
+
+    <div class="finish" data-finish></div>
+  </section>
+
+  <!-- ÚROVEŇ 2 -->
+  <section class="level" id="sekce-uroven-2" data-level="uroven-2" data-name="Úroveň 2" aria-labelledby="h-uroven-2" hidden>
+    <div class="level-head">
+      <h2 id="h-uroven-2">Úroveň 2: Přidej pár bloků</h2>
+      <p>Přetáhneš 1–3 nové bloky do skriptu, který už existuje. Na každý úkol asi 10–20 minut.</p>
+    </div>
+
+    <article class="task" data-id="2-1">
+      <div class="task-top"><span class="num">1</span><h3>Bum! Zvuk při výstřelu</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: při kliknutí na FIRE se ozve zvuk.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Fire Button</span></p>
+      <ol>
+        <li>Vyber postavu Fire Button a v záložce <b>Zvuky</b> přidej zvuk z knihovny (třeba „Whoosh“).</li>
+        <li>Vrať se do záložky Kód a najdi skript <span class="b ev">po kliknutí na mě</span>.</li>
+        <li>Přidej do něj blok <span class="b snd">začni hrát zvuk <i>…</i></span>.</li>
+      </ol>
+      <div class="script" aria-label="Ukázka skriptu">
+        <span class="b ev">po kliknutí na mě</span>
+        <span class="b snd new">začni hrát zvuk <i>Whoosh</i></span>
+        <span class="b ev">vyšli zprávu <i>fire1</i></span>
+        <span class="b look">skryj se</span>
+      </div>
+    </article>
+
+    <article class="task" data-id="2-2">
+      <div class="task-top"><span class="num">2</span><h3>Žuch! Zvuk při dopadu</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: když střela dopadne na zem, ozve se zvuk.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span>, velký skript se smyčkou <span class="b ctl">opakuj stále</span></p>
+      <ol>
+        <li>Postavě Rock přidej zvuk (třeba „Thud“ nebo „Crunch“).</li>
+        <li>Najdi podmínku <span class="b ctl">když <span class="b op"><span class="b var">Height</span> &lt; <i>-130</i></span> tak</span>. Ta se spustí ve chvíli, kdy střela dopadne.</li>
+        <li>Dovnitř, nad <span class="b ev">vyšli zprávu <i>roll and stop</i></span>, vlož <span class="b snd">začni hrát zvuk</span>.</li>
+      </ol>
+      <div class="script" aria-label="Ukázka skriptu">
+        <span class="b ctl">když <span class="b op"><span class="b var">Height</span> &lt; <i>-130</i></span> tak</span>
+        <div class="in">
+          <span class="b snd new">začni hrát zvuk <i>Thud</i></span>
+          <span class="b ev">vyšli zprávu <i>roll and stop</i></span>
+          <span class="b ctl">zastav <i>tento skript</i></span>
+        </div>
+      </div>
+      <p class="note">Blok musí být <b>uvnitř</b> podmínky „když“. Když ho pustíš vedle, zvuk se nepřehraje vůbec, nebo pořád.</p>
+    </article>
+
+    <article class="task" data-id="2-3">
+      <div class="task-top"><span class="num">3</span><h3>Střela se točí</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: střela se ve vzduchu otáčí jako opravdový kámen.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span>, stejný velký skript se smyčkou <span class="b ctl">opakuj stále</span></p>
+      <ol>
+        <li>Do smyčky přidej hned pod <span class="b mot">nastav y na <span class="b var">Height</span></span> blok <span class="b mot">otoč se <span aria-hidden="true">↻</span><span class="sr">doprava</span> o <i>10</i> stupňů</span>.</li>
+        <li>Zkus různá čísla. Jak to vypadá s 1? A se 45?</li>
+      </ol>
+      <details><summary>Bonus</summary><div>
+        <p>Místo pevného čísla dej do bloku otáčení proměnnou <span class="b var">X-Speed</span>. Rychlá střela se pak točí rychle a pomalá pomalu.</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="2-4">
+      <div class="task-top"><span class="num">4</span><h3>Střela ohlásí výsledek</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: když se střela zastaví, řekne třeba „Vzdálenost: 352“.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span>, skript <span class="b ev">po obdržení zprávy <i>roll and stop</i></span></p>
+      <ol>
+        <li>Najdi konec skriptu, kde je <span class="b var">nastav <i>X-Speed</i> na <i>0</i></span>.</li>
+        <li>Pod něj vlož <span class="b look">řekni <i>…</i></span> (ten bez sekund).</li>
+        <li>Do bloku řekni vlož zelený blok <span class="b op">spoj <i>…</i> <i>…</i></span>. Ten slepí dva texty dohromady.</li>
+        <li>Do prvního okénka napiš <b>Vzdálenost: </b> (s mezerou na konci) a do druhého dej proměnnou <span class="b var">Distance</span>.</li>
+      </ol>
+      <div class="script" aria-label="Ukázka skriptu">
+        <span class="b var">nastav <i>X-Speed</i> na <i>0</i></span>
+        <span class="b look new">řekni <span class="b op">spoj <i>Vzdálenost: </i> <span class="b var">Distance</span></span></span>
+        <span class="b ctl">zastav <i>tento skript</i></span>
+      </div>
+      <details><summary>Bonus: přidej na konec „ metrů!“</summary><div>
+        <p>Blok <span class="b op">spoj</span> spojí jen dvě věci. Do jeho druhého okénka proto vlož <b>další</b> spoj: <span class="b op">spoj <i>Vzdálenost: </i> <span class="b op">spoj <span class="b var">Distance</span> <i> metrů!</i></span></span></p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="2-5">
+      <div class="task-top"><span class="num">5</span><h3>Ovládání šipkami</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: šipkami nahoru a dolů měníš sílu, šipkami doleva a doprava sklon.</p>
+      <p class="where"><span class="tag">Kde:</span> <b>Scéna</b> (vpravo dole vedle seznamu postav)</p>
+      <ol>
+        <li>Vyber Scénu a přidej čtyři nové skripty, jeden pro každou šipku.</li>
+        <li>Každý začíná blokem <span class="b ev">po stisku klávesy <i>šipka nahoru</i></span>.</li>
+        <li>Pod něj dej <span class="b var">změň <i>Power (Speed)</i> o <i>5</i></span>. Pro šipku dolů napiš <b>-5</b>.</li>
+        <li>Šipky doleva a doprava udělej stejně, ale s proměnnou <b>Pitch (Up/Down)</b>.</li>
+      </ol>
+      <div class="script" aria-label="Ukázka skriptu">
+        <span class="b ev new">po stisku klávesy <i>šipka nahoru</i></span>
+        <span class="b var new">změň <i>Power (Speed)</i> o <i>5</i></span>
+      </div>
+      <details><summary>Bonus: hlídej hranice</summary><div>
+        <p>Šipkou teď jde síla zvýšit nad 100 a sklon stáhnout až na 0. Sklon 0 hru rozbije, protože se jím dělí. Obal blok změň podmínkou, třeba <span class="b ctl">když <span class="b op"><span class="b var">Pitch (Up/Down)</span> &gt; <i>40</i></span> tak</span> u šipky, která sklon zmenšuje.</p>
+      </div></details>
+    </article>
+
+    <div class="finish" data-finish></div>
+  </section>
+
+  <!-- ÚROVEŇ 3 -->
+  <section class="level" id="sekce-uroven-3" data-level="uroven-3" data-name="Úroveň 3" aria-labelledby="h-uroven-3" hidden>
+    <div class="level-head">
+      <h2 id="h-uroven-3">Úroveň 3: Nová proměnná a podmínka</h2>
+      <p>Vytvoříš vlastní proměnnou a naučíš hru rozhodovat. Na každý úkol asi 20–40 minut.</p>
+    </div>
+
+    <article class="task" data-id="3-1">
+      <div class="task-top"><span class="num">1</span><h3>Rekord</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: hra si pamatuje nejdelší hod a ukazuje ho na scéně.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span>, skript <span class="b ev">po obdržení zprávy <i>roll and stop</i></span></p>
+      <ol>
+        <li>V kategorii Proměnné klikni na „Vytvoř proměnnou“, pojmenuj ji <b>Rekord</b> a vyber „pro všechny postavy“.</li>
+        <li>Na konec skriptu <span class="b ev">po obdržení zprávy <i>roll and stop</i></span>, nad <span class="b ctl">zastav <i>tento skript</i></span>, vlož podmínku podle ukázky.</li>
+        <li>Podmínka zjistí, jestli je nový hod delší než rekord. Když ano, uloží ho jako nový rekord.</li>
+      </ol>
+      <div class="script" aria-label="Ukázka skriptu">
+        <span class="b var">nastav <i>X-Speed</i> na <i>0</i></span>
+        <span class="b ctl new">když <span class="b op"><span class="b var">Distance</span> &gt; <span class="b var">Rekord</span></span> tak</span>
+        <div class="in">
+          <span class="b var new">nastav <i>Rekord</i> na <span class="b var">Distance</span></span>
+          <span class="b look new">řekni <i>Nový rekord!</i> na <i>2</i> sekund</span>
+        </div>
+        <span class="b ctl">zastav <i>tento skript</i></span>
+      </div>
+      <p class="note">Máš tam už blok <b>řekni</b> z úrovně 2? Nevadí. Dej podmínku pod něj.</p>
+      <details><summary>Proč se rekord nesmaže po kliknutí na vlajku?</summary><div>
+        <p>Podívej se do skriptu <span class="b ev">po kliknutí na <span aria-hidden="true">⚑</span><span class="sr">zelenou vlajku</span></span> u postavy Rock. Nuluje se tam jen <b>Distance</b>, Rekord nikdo nenastavuje. Rekord vynuluješ tak, že klikneš na blok <span class="b var">nastav <i>Rekord</i> na <i>0</i></span> přímo v kódu.</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="3-2">
+      <div class="task-top"><span class="num">2</span><h3>Trefa do cíle</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: hra vymyslí vzdálenost a ty se do ní snažíš trefit.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span>, skripty <span class="b ev">po kliknutí na <span aria-hidden="true">⚑</span><span class="sr">zelenou vlajku</span></span> a <span class="b ev">po obdržení zprávy <i>roll and stop</i></span></p>
+      <ol>
+        <li>Vytvoř proměnnou <b>Cíl</b> (pro všechny postavy). Na scéně ji nech zobrazenou.</li>
+        <li>Do skriptu po kliknutí na vlajku přidej <span class="b var">nastav <i>Cíl</i> na <span class="b op">náhodné číslo od <i>200</i> do <i>800</i></span></span>.</li>
+        <li>Na konec skriptu roll and stop dej podmínky podle ukázky. Porovnávají Distance s Cílem.</li>
+      </ol>
+      <div class="script" aria-label="Ukázka skriptu">
+        <span class="b ctl new">když <span class="b op"><span class="b op">abs z <span class="b op"><span class="b var">Distance</span> − <span class="b var">Cíl</span></span></span> &lt; <i>30</i></span> tak</span>
+        <div class="in"><span class="b look new">řekni <i>TREFA!</i></span></div>
+        <span class="b ctl new">jinak</span>
+        <div class="in">
+          <span class="b ctl new">když <span class="b op"><span class="b var">Distance</span> &lt; <span class="b var">Cíl</span></span> tak</span>
+          <div class="in"><span class="b look new">řekni <i>Moc krátko</i></span></div>
+          <span class="b ctl new">jinak</span>
+          <div class="in"><span class="b look new">řekni <i>Moc daleko</i></span></div>
+        </div>
+      </div>
+      <p class="note">Jestli už máš blok řekni z dřívějších úkolů, dej podmínky pod něj.</p>
+      <details><summary>Co je „abs“?</summary><div>
+        <p>Absolutní hodnota z čísla udělá vždy kladné číslo: z −20 udělá 20. Díky tomu nevadí, jestli jsi přestřelil/a, nebo nedostřelil/a. Blok najdeš v Operátorech jako <span class="b op">abs z <i>…</i></span>. V jeho nabídce jsou i jiné funkce.</p>
+        <p>Je to moc těžké? Začni jednodušeji: jen „Moc krátko“, nebo „Moc daleko“ podle toho, jestli je Distance menší než Cíl.</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="3-3">
+      <div class="task-top"><span class="num">3</span><h3>Vítr</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: v každé hře fouká jiný vítr. Do zad střelu postrčí, proti ní ji zbrzdí.</p>
+      <p class="where"><span class="tag">Kde:</span> postava <span class="sprite">Rock</span></p>
+      <ol>
+        <li>Vytvoř proměnnou <b>Vítr</b> (pro všechny postavy) a nech ji zobrazenou na scéně.</li>
+        <li>Do skriptu po kliknutí na vlajku přidej <span class="b var">nastav <i>Vítr</i> na <span class="b op">náhodné číslo od <i>-3</i> do <i>3</i></span></span>.</li>
+        <li>Postava Rock má dva skripty <span class="b ev">po obdržení zprávy <i>fire2 launched</i></span>. Vyber ten, který začíná <span class="b var">nastav <i>Y-Speed</i> na …</span>.</li>
+        <li>Hned pod druhý blok, <span class="b var">nastav <i>X-Speed</i> na …</span>, přidej <span class="b var">změň <i>X-Speed</i> o <span class="b var">Vítr</span></span>.</li>
+        <li>Zahraj si to spolu s úkolem 2. Sílu musíš přizpůsobit větru.</li>
+      </ol>
+      <p class="note">Silný protivítr a malá síla můžou střelu poslat dozadu. Zkus to!</p>
+      <details><summary>Bonus: šipka větru</summary><div>
+        <p>Nakresli novou postavu šipky. Podle větru se otočí: <span class="b ctl">když <span class="b op"><span class="b var">Vítr</span> &gt; <i>0</i></span> tak</span> <span class="b mot">natoč se směrem <i>90</i></span>, jinak <span class="b mot">natoč se směrem <i>-90</i></span>.</p>
+      </div></details>
+    </article>
+
+    <div class="finish" data-finish></div>
+  </section>
+
+  <!-- ÚROVEŇ 4 -->
+  <section class="level" id="sekce-uroven-4" data-level="uroven-4" data-name="Úroveň 4" aria-labelledby="h-uroven-4" hidden>
+    <div class="level-head">
+      <h2 id="h-uroven-4">Úroveň 4: Pro mistry stavitele</h2>
+      <p>Úpravy napříč mnoha postavami. Musíš pochopit, jak si postavy posílají zprávy. Klidně na celou hodinu.</p>
+    </div>
+
+    <article class="task" data-id="4-1">
+      <div class="task-top"><span class="num">1</span><h3>Tlačítko „Znovu“</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: po dopadu se objeví tlačítko Znovu a můžeš střílet bez kliknutí na zelenou vlajku.</p>
+      <p class="where"><span class="tag">Kde:</span> skoro všechny postavy</p>
+      <ol>
+        <li><b>Rock:</b> na konec skriptu <span class="b ev">po obdržení zprávy <i>roll and stop</i></span>, nad <span class="b ctl">zastav</span>, přidej <span class="b ev">vyšli zprávu <i>konec</i></span>. Zprávu vytvoříš v nabídce bloku volbou „Nová zpráva“.</li>
+        <li><b>Nová postava Znovu:</b> nakresli tlačítko a dej mu tři skripty:
+          <div class="script" aria-label="Ukázka skriptu 1" style="margin-top:6px">
+            <span class="b ev new">po kliknutí na <span aria-hidden="true">⚑</span><span class="sr">zelenou vlajku</span></span><span class="b look new">skryj se</span>
+          </div>
+          <div class="script" aria-label="Ukázka skriptu 2" style="margin-top:6px">
+            <span class="b ev new">po obdržení zprávy <i>konec</i></span><span class="b look new">ukaž se</span>
+          </div>
+          <div class="script" aria-label="Ukázka skriptu 3" style="margin-top:6px">
+            <span class="b ev new">po kliknutí na mě</span><span class="b look new">skryj se</span><span class="b ev new">vyšli zprávu <i>reset</i></span>
+          </div>
+        </li>
+        <li><b>Díly katapultu:</b> klikni pravým tlačítkem na skript <span class="b ev">po kliknutí na <span aria-hidden="true">⚑</span><span class="sr">zelenou vlajku</span></span> a vyber „Duplikovat“. V kopii vyměň horní blok za <span class="b ev">po obdržení zprávy <i>reset</i></span>. Udělej to u každé z těchto postav:
+          <ul>
+            <li>Mangonel Base, Frame, Frame2</li>
+            <li>Crossbar, Crossbar2, THE crossbar</li>
+            <li>Arm &amp; bucket, Rock</li>
+          </ul>
+        </li>
+        <li><b>Fire Button:</b> přidej <span class="b ev">po obdržení zprávy <i>reset</i></span> a pod něj <span class="b look">ukaž se</span>.</li>
+        <li><b>Distance Flag:</b> staré vlaječky musí zmizet. Přidej <span class="b ev">po obdržení zprávy <i>reset</i></span> a pod něj <span class="b ctl">smaž tento klon</span>.</li>
+      </ol>
+      <details><summary>Nápověda: když to nefunguje</summary><div>
+        <p>Projdi postavy jednu po druhé a u každé se zeptej: „Kde má stát na začátku? Má být vidět?“ Co dělá skript po kliknutí na vlajku, musí udělat i po zprávě reset.</p>
+        <p>Kopie u <span class="sprite">Arm &amp; bucket</span> vrací sílu na 50 a kopie u <span class="sprite">THE crossbar</span> vrací sklon na 50. Má si hra nastavení pamatovat? Pak bloky <span class="b var">nastav <i>Power (Speed)</i> na <i>50</i></span> a <span class="b var">nastav <i>Pitch (Up/Down)</i> na <i>50</i></span> z kopií vyhoď.</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="4-2">
+      <div class="task-top"><span class="num">2</span><h3>Tři pokusy</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: hráč má jen 3 střely. Pak hra napíše „Konec hry“ a ukáže rekord.</p>
+      <p class="where"><span class="tag">Potřebuješ:</span> hotový úkol 1 (Znovu) a Rekord z úrovně 3, úkolu 1</p>
+      <ol>
+        <li>Vytvoř proměnnou <b>Pokusy</b>. Po kliknutí na vlajku ji nastav na 3.</li>
+        <li>Při každém výstřelu (tlačítko FIRE) ji zmenši o 1.</li>
+        <li>V postavě Znovu uprav skript <span class="b ev">po obdržení zprávy <i>konec</i></span>: tlačítko se ukáže, jen když jsou Pokusy větší než 0. Jinak vyšli zprávu <b>konec hry</b>.</li>
+        <li>Na zprávu konec hry ať nějaká postava řekne výsledek, třeba přes <span class="b op">spoj</span> a proměnnou Rekord.</li>
+      </ol>
+    </article>
+
+    <article class="task" data-id="4-3">
+      <div class="task-top"><span class="num">3</span><h3>Hrad v dálce</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: do hry přibude hrad, který „přijíždí“ zprava, když střela letí.</p>
+      <p class="where"><span class="tag">Kde:</span> nová postava <b>Hrad</b>, inspirace v postavě <span class="sprite">Distance Flag</span></p>
+      <ol>
+        <li>Důležité tajemství: střela se doprava ve skutečnosti nehýbe. Svět se posouvá doleva. (Víc v kategorii Bádání, úkol 2.)</li>
+        <li>Prohlédni si, jak se pohybují vlaječky v <span class="sprite">Distance Flag</span>. Najdi blok <span class="b mot">změň x o …</span> a zjisti, co počítá.</li>
+        <li>Postav hrad k pravému okraji a posouvej ho stejným vzorcem.</li>
+        <li>Když se střela dotkne hradu, ať hrad změní kostým na rozbitý.</li>
+      </ol>
+      <details><summary>Nápověda: vzorec</summary><div>
+        <p><span class="b op"><span class="b sense"><i>X-Speed</i> z <i>Rock</i></span> − <span class="b op"><span class="b sense"><i>X-Speed</i> z <i>Rock</i></span> × <i>2</i></span></span> je jen složitý zápis pro <b>mínus X-Speed</b>. Svět se posouvá doleva stejně rychle, jako by střela letěla doprava.</p>
+        <p>Scratch nepustí postavu úplně mimo scénu. Hrad proto schovej (<span class="b look">skryj se</span>) a ukaž ho, až bude Distance třeba větší než 300.</p>
+      </div></details>
+    </article>
+
+    <div class="finish" data-finish></div>
+  </section>
+
+  <!-- BÁDÁNÍ -->
+  <section class="level" id="sekce-badani" data-level="badani" data-name="Bádání" aria-labelledby="h-badani" hidden>
+    <div class="level-head">
+      <h2 id="h-badani">Bádání: s tužkou a papírem</h2>
+      <p>Hra je tvoje laboratoř. Nejdřív odhadni, pak vyzkoušej ve Scratchi a výsledek zapiš. Hodí se k jakékoli úrovni.</p>
+    </div>
+
+    <article class="task" data-id="5-1">
+      <div class="task-top"><span class="num">1</span><h3>Tabulka pokusů</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: najít pravidlo, jak síla a sklon ovlivňují vzdálenost.</p>
+      <p class="where"><span class="tag">Kde:</span> posuvníky na scéně a proměnná Distance</p>
+      <ol>
+        <li>Odhadni vzdálenost dřív, než vystřelíš, a napiš ji do sloupce Odhad.</li>
+        <li>Vystřel a zapiš skutečnou vzdálenost.</li>
+        <li>Měň vždycky jen <b>jednu</b> věc. Tak poznáš, co způsobila.</li>
+      </ol>
+      <div class="table-wrap">
+        <table>
+          <caption>Moje pokusy s katapultem</caption>
+          <thead><tr><th scope="col">Pokus</th><th scope="col">Power</th><th scope="col">Pitch</th><th scope="col">Odhad</th><th scope="col">Distance</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>50</td><td>50</td><td class="blank"></td><td class="blank"></td></tr>
+            <tr><td>2</td><td>100</td><td>50</td><td class="blank"></td><td class="blank"></td></tr>
+            <tr><td>3</td><td>50</td><td>100</td><td class="blank"></td><td class="blank"></td></tr>
+            <tr><td>4</td><td>100</td><td>100</td><td class="blank"></td><td class="blank"></td></tr>
+            <tr><td>5</td><td>100</td><td>40</td><td class="blank"></td><td class="blank"></td></tr>
+            <tr><td>6</td><td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Co se stane se vzdáleností, když sílu zdvojnásobíš? A co když zvětšíš sklon?</p>
+      <div class="lines" aria-hidden="true"><span></span><span></span></div>
+      <details><summary>Prozradit tajemství (až po pokusech!)</summary><div>
+        <p>V postavě Rock se rychlost počítá jako <span class="b op"><span class="b var">Power (Speed)</span> / <span class="b var">Pitch (Up/Down)</span></span>. Pokusy 1 a 4 proto dopadnou skoro stejně. Větší sklon dává <b>kratší</b> hod. U opravdového katapultu by to bylo jinak. Proč asi?</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="5-2">
+      <div class="task-top"><span class="num">2</span><h3>Detektivka: Kdo se hýbe?</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: přijít na trik, jak hra předstírá dlouhý let.</p>
+      <p class="where"><span class="tag">Kde:</span> scéna při výstřelu a kód postavy <span class="sprite">Rock</span></p>
+      <ol>
+        <li>Spusť hru a vystřel. Sleduj střelu: pohybuje se doprava?</li>
+        <li>Teď sleduj katapult a vlaječky. Co dělají?</li>
+        <li>Otevři kód postavy Rock a hledej blok, který mění <b>x</b> (vodorovnou polohu). Najdeš ho?</li>
+        <li>Napiš vlastními slovy, jak to funguje.</li>
+      </ol>
+      <div class="lines" aria-hidden="true"><span></span><span></span><span></span></div>
+      <details><summary>Nápověda</summary><div>
+        <p>Vzpomeň si na jízdu vlakem: vypadá to, že stromy za oknem utíkají dozadu. Stejný trik používají hry, kde postava běží a krajina se posouvá.</p>
+      </div></details>
+    </article>
+
+    <article class="task" data-id="5-3">
+      <div class="task-top"><span class="num">3</span><h3>Co se stane, když…?</h3><label class="done"><input type="checkbox"><span class="label">Hotovo</span></label></div>
+      <p class="goal">Cíl: předpovědět, co udělá změna v kódu. Teprve pak to vyzkoušet.</p>
+      <p class="where"><span class="tag">Jak:</span> u každé otázky si nejdřív zapiš odhad. Pak to zkus ve Scratchi a vrať původní hodnotu.</p>
+      <ol>
+        <li>…v postavě Rock smažeš blok <span class="b var">změň <i>Y-Speed</i> o <i>-0.15</i></span>?</li>
+        <li>…v podmínce dopadu změníš <b>-130</b> na <b>0</b>?</li>
+        <li>…u postavy <span class="sprite">THE crossbar</span> smažeš smyčku <span class="b ctl">opakuj stále</span>?</li>
+        <li>…u postavy <span class="sprite">Distance Flag</span> změníš <b>199</b> na <b>50</b>?</li>
+      </ol>
+    </article>
+
+    <div class="finish" data-finish></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('nav button'));
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section.level'));
+  var keys = sections.map(function (s) { return s.dataset.level; });
+  var sentinel = document.getElementById('nav-sentinel');
+  var announce = document.getElementById('announce');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var current = null;
+
+  /* Legenda pod každou ukázkou s novými bloky */
+  document.querySelectorAll('.script').forEach(function (sc) {
+    if (!sc.querySelector('.new')) return;
+    var host = sc.closest('li') ? null : sc;
+    if (!host) return;
+    var p = document.createElement('p');
+    p.className = 'legend';
+    p.innerHTML = '<span class="swatch" aria-hidden="true"></span>Čárkovaně orámované bloky přidáváš ty.';
+    sc.insertAdjacentElement('afterend', p);
+  });
+
+  /* Odškrtnutí */
+  var KEY = 'katapult-hotovo';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  /* Konec úrovně */
+  function finishHTML(sec, idx) {
+    var next = sections[idx + 1];
+    return '<div class="finish-body"><p class="finish-title"></p><p class="finish-text"></p>' +
+      (next ? '<button class="btn next" type="button" data-go="' + next.dataset.level + '">Pokračovat: ' + next.dataset.name + '</button>' : '') +
+      '</div>';
+  }
+  sections.forEach(function (sec, i) {
+    var f = sec.querySelector('[data-finish]');
+    f.innerHTML = finishHTML(sec, i);
+    var nb = f.querySelector('.next');
+    if (nb) nb.addEventListener('click', function () { go(nb.dataset.go); });
+  });
+
+  function refresh(fireFor) {
+    sections.forEach(function (sec) {
+      var tasks = sec.querySelectorAll('.task');
+      var done = 0;
+      tasks.forEach(function (t) { if (state[t.dataset.id]) done++; });
+      var total = tasks.length, all = done === total;
+      var btn = buttons.filter(function (b) { return b.dataset.level === sec.dataset.level; })[0];
+      btn.querySelector('.count').textContent = done + '/' + total;
+      btn.classList.toggle('all-done', all);
+      btn.setAttribute('aria-label', sec.dataset.name + ', splněno ' + done + ' z ' + total);
+      var f = sec.querySelector('[data-finish]');
+      f.classList.toggle('complete', all);
+      f.querySelector('.finish-title').textContent = all ? sec.dataset.name + ' je hotová!' : 'Zbývá ' + (total - done) + ' z ' + total;
+      f.querySelector('.finish-text').textContent = all
+        ? 'Všechny úkoly jsou splněné. Ukaž projekt kamarádovi nebo učiteli.'
+        : 'Splněno ' + done + ' z ' + total + '.';
+      if (sec.dataset.level === 'badani' && all) f.querySelector('.finish-text').textContent = 'Jsi opravdový badatel/badatelka. Porovnej svou tabulku se spolužákem.';
+    });
+  }
+
+  document.querySelectorAll('.task').forEach(function (t) {
+    var box = t.querySelector('.done input');
+    var id = t.dataset.id;
+    box.id = 'hotovo-' + id;
+    box.checked = !!state[id];
+    t.classList.toggle('is-done', box.checked);
+    box.addEventListener('change', function () {
+      state[id] = box.checked;
+      t.classList.toggle('is-done', box.checked);
+      save();
+      refresh(t.closest('section').dataset.level);
+    });
+  });
+
+  /* Přepínání úrovní */
+  function show(key, scroll) {
+    if (key === 'bez-pocitace') key = 'badani';
+    if (keys.indexOf(key) === -1) key = keys[0];
+    sections.forEach(function (s) { s.hidden = s.dataset.level !== key; });
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.level === key ? 'true' : 'false'); });
+    var sec = sections[keys.indexOf(key)];
+    if (current !== null && current !== key) announce.textContent = 'Zobrazeno: ' + sec.dataset.name;
+    current = key;
+    var active = buttons[keys.indexOf(key)];
+    if (active.scrollIntoView && active.parentNode.scrollWidth > active.parentNode.clientWidth) {
+      active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+    if (scroll) {
+      var top = sentinel.getBoundingClientRect().top + window.scrollY;
+      if (window.scrollY > top) window.scrollTo({ top: top, behavior: reduce ? 'auto' : 'smooth' });
+    }
+  }
+  function go(key) {
+    if (location.hash !== '#' + key) { history.replaceState ? history.pushState(null, '', '#' + key) : (location.hash = key); }
+    show(key, true);
+  }
+  buttons.forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.level); }); });
+  window.addEventListener('hashchange', function () { show(location.hash.slice(1), true); });
+  window.addEventListener('popstate', function () { show(location.hash.slice(1), true); });
+  show(location.hash.slice(1), false);
+  refresh(null);
+
+  /* Začít znovu: dvoukrokové potvrzení */
+  var ask = document.getElementById('reset-ask'), yes = document.getElementById('reset-yes'), no = document.getElementById('reset-no'), txt = document.getElementById('reset-text');
+  function resetUI(msg) { ask.hidden = false; yes.hidden = true; no.hidden = true; txt.textContent = msg || 'Sedí u počítače někdo nový?'; }
+  ask.addEventListener('click', function () {
+    var n = Object.keys(state).filter(function (k) { return state[k]; }).length;
+    if (!n) { txt.textContent = 'Nic není odškrtnuté, můžeš rovnou začít.'; return; }
+    ask.hidden = true; yes.hidden = false; no.hidden = false;
+    txt.textContent = 'Smazat ' + n + ' odškrtnutí? Projekt ve Scratchi zůstane, jak je.';
+    no.focus();
+  });
+  no.addEventListener('click', function () { resetUI(); ask.focus(); });
+  yes.addEventListener('click', function () {
+    state = {}; save();
+    document.querySelectorAll('.task').forEach(function (t) { t.classList.remove('is-done'); t.querySelector('.done input').checked = false; });
+    refresh(null);
+    resetUI('Odškrtnutí jsou smazaná. Hodně štěstí!');
+    ask.focus();
+  });
+
+  /* Tisk: rozbalit nápovědy */
+  var opened = [];
+  window.addEventListener('beforeprint', function () {
+    opened = [];
+    document.querySelectorAll('details:not([open])').forEach(function (d) { d.open = true; opened.push(d); });
+  });
+  window.addEventListener('afterprint', function () { opened.forEach(function (d) { d.open = false; }); });
+})();
+</script>
