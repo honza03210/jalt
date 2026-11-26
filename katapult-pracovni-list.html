@@ -707,12 +707,14 @@ td.blank { height: 40px; }
     }
   }
   function go(key) {
-    if (location.hash !== '#' + key) { history.replaceState ? history.pushState(null, '', '#' + key) : (location.hash = key); }
     show(key, true);
+    try { if (location.hash !== '#' + key) location.hash = key; } catch (e) {}
   }
   buttons.forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.level); }); });
-  window.addEventListener('hashchange', function () { show(location.hash.slice(1), true); });
-  window.addEventListener('popstate', function () { show(location.hash.slice(1), true); });
+  window.addEventListener('hashchange', function () {
+    var k = location.hash.slice(1);
+    if (k && k !== current) show(k, true);
+  });
   show(location.hash.slice(1), false);
   refresh(null);
 
