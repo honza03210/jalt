@@ -1,5 +1,9 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Katapult ve Scratchi</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
 /* Layout: jedna čtecí kolona navržená od ~400 px (okno vedle Scratche); pod hlavičkou lepkavá lišta úrovní
@@ -35,9 +39,10 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-padding-top: 80px; }
 body {
-  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6;
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 24px 64px;
@@ -166,6 +171,8 @@ td.blank { height: 40px; }
   .b, .b i, .script, .where, th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
+</head>
+<body>
 
 <div class="wrap">
   <header>
@@ -746,3 +753,5 @@ td.blank { height: 40px; }
   window.addEventListener('afterprint', function () { opened.forEach(function (d) { d.open = false; }); });
 })();
 </script>
+</body>
+</html>
